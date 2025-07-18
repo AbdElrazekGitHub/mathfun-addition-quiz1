@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مسابقة الجمع - MathFun</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(to bottom, #f0f8ff, #dff0d8);
+      padding: 20px;
+      text-align: center;
+    }
+    .question-box {
+      background-color: #fff;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    .btn-answer {
+      font-size: 24px;
+      margin: 10px;
+    }
+    #certificate {
+      display: none;
+      margin-top: 30px;
+      padding: 20px;
+      border: 2px dashed #4CAF50;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 class="mb-4">🎉 مسابقة الجمع - MathFun 🎉</h1>
+    <div id="start-screen">
+      <div class="mb-3">
+        <label for="username" class="form-label">ادخل اسمك:</label>
+        <input type="text" id="username" class="form-control text-center" placeholder="اسم الطفل">
+      </div>
+      <div class="row mb-3">
+        <div class="col">
+          <label>عدد أرقام العدد الأول:</label>
+          <select id="digits1" class="form-select">
+            <option value="1">1 رقم</option>
+            <option value="2">2 رقم</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>عدد أرقام العدد الثاني:</label>
+          <select id="digits2" class="form-select">
+            <option value="1">1 رقم</option>
+            <option value="2">2 رقم</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-success" onclick="startQuiz()">ابدأ المسابقة</button>
+    </div>
+
+    <div id="quiz" class="question-box" style="display:none;">
+      <h4 id="question-text"></h4>
+      <div id="answers" class="d-flex justify-content-center flex-wrap"></div>
+    </div>
+
+    <div id="certificate">
+      <h2>🏆 شهادة تقدير 🏆</h2>
+      <p id="cert-text"></p>
+      <button class="btn btn-primary" onclick="location.reload()">مسابقة جديدة</button>
+    </div>
+  </div>
+
+  <audio id="correct-sound" src="correct.mp3"></audio>
+  <audio id="wrong-sound" src="wrong.mp3"></audio>
+
+  <script>
+    let questions = [];
+    let current = 0;
+    let score = 0;
+    let username = "";
+
+    function generateNumber(digits) {
+      const min = Math.pow(10, digits - 1);
+      const max = Math.pow(10, digits) - 1;
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function startQuiz() {
+      username = document.getElementById("username").value.trim();
+      if (!username) {
+        Swal.fire('يرجى إدخال الاسم أولاً');
+        return;
+      }
+      const d1 = parseInt(document.getElementById("digits1").value);
+      const d2 = parseInt(document.getElementById("digits2").value);
+      questions = [];
+      for (let i = 0; i < 10; i++) {
+        const a = generateNumber(d1);
+        const b = generateNumber(d2);
+        const correct = a + b;
+        const options = [correct];
+        while (options.length < 4) {
+          const wrong = correct + Math.floor(Math.random() * 10 - 5);
+          if (!options.includes(wrong) && wrong >= 0) options.push(wrong);
+        }
+        options.sort(() => Math.random() - 0.5);
+        questions.push({ a, b, correct, options });
+      }
+      document.getElementById("start-screen").style.display = "none";
+      document.getElementById("quiz").style.display = "block";
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const q = questions[current];
+      document.getElementById("question-text").textContent = `السؤال ${current + 1}: كم حاصل ${q.a} + ${q.b}؟`;
+      const answersDiv = document.getElementById("answers");
+      answersDiv.innerHTML = "";
+      q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-outline-primary btn-answer";
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt);
+        answersDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(answer) {
+      const q = questions[current];
+      if (answer === q.correct) {
+        score++;
+        document.getElementById("correct-sound").play();
+        Swal.fire({ icon: 'success', title: 'إجابة صحيحة!', timer: 1000, showConfirmButton: false });
+      } else {
+        document.getElementById("wrong-sound").play();
+        Swal.fire({ icon: 'error', title: 'إجابة خاطئة!', text: `الإجابة الصحيحة هي ${q.correct}`, timer: 1500, showConfirmButton: false });
+      }
+      current++;
+      setTimeout(() => {
+        if (current < questions.length) {
+          showQuestion();
+        } else {
+          document.getElementById("quiz").style.display = "none";
+          document.getElementById("certificate").style.display = "block";
+          document.getElementById("cert-text").textContent = `أحسنت يا ${username}! لقد حصلت على ${score} من 10.`;
+        }
+      }, 1200);
+    }
+  </script>
+
+</body>
+</html>
